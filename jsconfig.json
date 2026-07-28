@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "es2022",
+    "checkJs": true,
+    "moduleResolution": "nodenext"
+  },
+  "include": ["build.cjs"]
+}

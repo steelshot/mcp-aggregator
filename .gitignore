@@ -1,0 +1,6 @@
+*.container
+.env
+.idea/
+build.json
+credentials.json
+node_modules/

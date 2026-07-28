@@ -1,0 +1,18 @@
+{
+  "name": "mcp-aggregator",
+  "private": true,
+  "description": "Builds a container image that compresses multiple MCP servers behind a single Streamable HTTP endpoint.",
+  "license": "MIT",
+  "author": "Džiugas Eiva",
+  "repository": "github:steelshot/mcp-aggregator",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node build.cjs",
+    "login": "node build.cjs --login"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1"
+  }
+}
