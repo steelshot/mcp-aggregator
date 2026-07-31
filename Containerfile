@@ -1,7 +1,7 @@
 FROM node:lts-alpine
 
 ARG SUPERGATEWAY_VERSION=3.4.3
-ARG MCP_ROUTER_VERSION=1.5.2
+ARG MCP_ROUTER_VERSION=1.5.4
 
 ENV MCP_COMPRESS_ROUTER_HOME=/home/mcp/.local/share/mcp-compress-router
 ENV MCP_AGGREGATOR_CONFIG=/home/mcp/config
@@ -33,7 +33,7 @@ RUN { \
       echo '#!/bin/sh'; \
       printf 'exec supergateway --stateful --sessionTimeout 86400000'; \
       printf ' --stdio mcp-compress-router --outputTransport streamableHttp'; \
-      printf ' --port %s --streamableHttpPath /stream\n' "${PORT}"; \
+      printf ' --port %s --streamableHttpPath /mcp\n' "${PORT}"; \
     } > /usr/local/bin/entrypoint && \
     chmod 755 /usr/local/bin/entrypoint
 
