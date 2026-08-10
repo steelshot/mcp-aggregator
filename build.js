@@ -31,39 +31,53 @@
  * results to Podman or Docker as build secrets.
  */
 
-const Ajv2020 = require("ajv/dist/2020");
-const {createHash} = require("node:crypto");
-const {spawnSync} = require("node:child_process");
-const {chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} = require("node:fs");
-const {tmpdir} = require("node:os");
-const {join} = require("node:path");
+import Ajv2020 from "ajv/dist/2020.js";
+import {Liquid} from "liquidjs";
+import {createHash} from "node:crypto";
+import {spawnSync} from "node:child_process";
+import {chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {createRequire} from "node:module";
+import {tmpdir} from "node:os";
+import {dirname, join} from "node:path";
 
 /**
+ * Shape of `build.json` after validation, with schema defaults applied.
+ *
  * @typedef {{
  *   build: {
  *     engine: string,
  *     name: string,
  *     tag: string,
- *     port?: number,
- *     args: string[],
- *     podman?: { generate_quadlet_unit?: boolean }
+ *     port: number,
+ *     podman?: {
+ *       generate_quadlet_unit: boolean,
+ *       description: string,
+ *       volumes: string[],
+ *       environment: string[]
+ *     }
  *   },
  *   mcp: {
  *     servers: Record<string, unknown>,
- *     oauth?: string[]
+ *     oauth: string[]
  *   }
  * }} BuildConfig
  */
 
-const ROOT = __dirname;
+const ROOT = import.meta.dirname;
 const BUILD_JSON = join(ROOT, "build.json");
 const BUILD_SCHEMA = join(ROOT, "build.schema.json");
 const ENV_FILE = join(ROOT, ".env");
 const CREDENTIALS_JSON = join(ROOT, "credentials.json");
-const STATE_DIR = "/home/mcp/.local/share/mcp-compress-router";
-const ajv = new Ajv2020({allErrors: true});
+const QUADLET_TEMPLATE = join(ROOT, "quadlet.container.liquid");
+const ROUTER_PACKAGE = "mcp-compress-router";
+const STATE_DIR = "/app/state";
+const ajv = new Ajv2020({allErrors: true, useDefaults: true});
+const require = createRequire(import.meta.url);
 
-/** @param {string} message @returns {never} */
+/**
+ * @param {string} message
+ * @returns {never}
+ */
 function fail(message) {
     console.error(message);
     process.exit(1);
@@ -127,25 +141,61 @@ function loadEnvFile() {
     }
 }
 
-/** @param {string[]} args @returns {string[]} */
-function buildArgFlags(args) {
-    const flags = [];
+const USAGE = `Usage: node build.js [options]
 
-    for (const arg of args) {
-        flags.push("--build-arg", arg);
+Builds the mcp-aggregator container image described by build.json.
+
+Options:
+  --login     Re-authorize every server in mcp.oauth, ignoring cached tokens
+  -h, --help  Show this message and exit`;
+
+/**
+ * Parses the command line, rejecting anything unrecognized.
+ *
+ * @param {string[]} argv
+ * @returns {boolean} whether a forced re-login was requested
+ */
+function parseArgs(argv) {
+    let forceLogin = false;
+
+    for (const arg of argv) {
+        if (arg === "--login") {
+            forceLogin = true;
+        } else if (arg === "-h" || arg === "--help") {
+            console.log(USAGE);
+            process.exit(0);
+        } else {
+            fail(`Unknown argument: ${arg}\n\n${USAGE}`);
+        }
     }
 
-    return flags;
+    return forceLogin;
 }
 
 /**
- * @param {string[]} args
- * @param {string} name
- * @returns {string | undefined}
+ * Locates the router's entry script in the local dependency tree.
+ *
+ * Resolves the script rather than the `.bin` shim because `spawnSync` cannot execute the generated `.cmd` wrapper on Windows without a shell.
+ *
+ * @returns {string}
  */
-function findBuildArg(args, name) {
-    const prefix = `${name}=`;
-    return args.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+function routerEntry() {
+    let manifestPath;
+
+    try {
+        manifestPath = require.resolve(`${ROUTER_PACKAGE}/package.json`, {paths: [ROOT]});
+    } catch {
+        return fail(`${ROUTER_PACKAGE} is not installed; run "npm install"`);
+    }
+
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.[ROUTER_PACKAGE];
+
+    if (!bin) {
+        return fail(`${manifestPath} declares no ${ROUTER_PACKAGE} binary`);
+    }
+
+    return join(dirname(manifestPath), bin);
 }
 
 /**
@@ -242,19 +292,19 @@ function writeCredentialsFile(dir, config, mcpJsonFile, forceLogin) {
     const cached = existsSync(CREDENTIALS_JSON) ? readFileSync(CREDENTIALS_JSON, "utf8") : "{}\n";
     writeFileSync(path, cached, {encoding: "utf8", mode: 0o600});
 
-    const servers = config.mcp.oauth ?? [];
+    const servers = config.mcp.oauth;
     const pending = forceLogin ? servers : servers.filter((server) => !hasTokens(cached, server));
 
     if (pending.length === 0) {
         return path;
     }
 
-    const version = findBuildArg(config.build.args, "MCP_ROUTER_VERSION") ?? "latest";
-    const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+    const entry = routerEntry();
+    const version = require(`${ROUTER_PACKAGE}/package.json`).version;
 
     for (const server of pending) {
-        console.log(`Authorizing ${server} with mcp-compress-router@${version}...`);
-        const login = spawnSync(npx, ["-y", `mcp-compress-router@${version}`, "-c", mcpJsonFile, "login", server], {stdio: "inherit"});
+        console.log(`Authorizing ${server} with ${ROUTER_PACKAGE}@${version}...`);
+        const login = spawnSync(process.execPath, [entry, "-c", mcpJsonFile, "login", server], {stdio: "inherit"});
 
         if (login.status !== 0) {
             fail(`OAuth login failed for ${server}`);
@@ -272,34 +322,40 @@ function writeCredentialsFile(dir, config, mcpJsonFile, forceLogin) {
 }
 
 /**
+ * Renders the Quadlet unit from `quadlet.container.liquid`, with `build.podman` supplying the optional volumes and environment variables the template loops over.
+ *
  * @param {string} root
  * @param {string} image
  * @param {string} name
  * @param {number} port
- * @returns {string}
+ * @param {NonNullable<BuildConfig["build"]["podman"]>} podman
+ * @returns {Promise<string>}
  */
-function writeQuadletFile(root, image, name, port) {
+async function writeQuadletFile(root, image, name, port, podman) {
+    if (!existsSync(QUADLET_TEMPLATE)) {
+        fail(`Quadlet template not found: ${QUADLET_TEMPLATE}`);
+    }
+
+    const liquid = new Liquid({root, strictVariables: true, strictFilters: true});
     const path = join(root, `${name}.container`);
-    const body = `[Unit]
-Description=Local MCP aggregate
+    let body;
 
-[Container]
-ContainerName=${name}
-Image=${image}
-RunInit=true
-PublishPort=127.0.0.1:${port}:${port}
-Volume=/etc/ssl/certs:/etc/ssl/certs:ro
-Volume=${name}-state:${STATE_DIR}
+    try {
+        body = await liquid.parseAndRender(readFileSync(QUADLET_TEMPLATE, "utf8"), {
+            description: podman.description,
+            name,
+            image,
+            port,
+            state_dir: STATE_DIR,
+            volumes: podman.volumes,
+            environment: podman.environment,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return fail(`Failed to render ${QUADLET_TEMPLATE}: ${message}`);
+    }
 
-[Service]
-Restart=always
-RestartSec=5
-TimeoutStartSec=300
-
-[Install]
-WantedBy=default.target
-`;
-    writeFileSync(path, body, {encoding: "utf8"});
+    writeFileSync(path, body.endsWith("\n") ? body : `${body}\n`, {encoding: "utf8"});
     return path;
 }
 
@@ -307,12 +363,12 @@ process.chdir(ROOT);
 
 loadEnvFile();
 
-const forceLogin = process.argv.includes("--login");
+const forceLogin = parseArgs(process.argv.slice(2));
 const config = loadBuildConfig();
 const engine = config.build.engine.trim();
 const name = config.build.name.trim();
 const tag = config.build.tag.trim();
-const port = config.build.port ?? 20000;
+const port = config.build.port;
 const image = process.env.IMAGE_NAME ?? `${name}:${tag}`;
 const secretDir = mkdtempSync(join(tmpdir(), "mcp-aggregator-"));
 process.on("exit", () => rmSync(secretDir, {recursive: true, force: true}));
@@ -325,7 +381,7 @@ if (spawnSync(engine, ["--version"], {encoding: "utf8"}).status !== 0) {
 }
 
 const configRevision = configRevisionHash([mcpJsonFile, credentialsFile]);
-const result = spawnSync(engine, ["build", ...buildArgFlags(config.build.args), "--build-arg", `PORT=${port}`, "--build-arg", `CONFIG_REVISION=${configRevision}`, "--secret", `id=mcp_json,src=${mcpJsonFile}`, "--secret", `id=mcp_credentials,src=${credentialsFile}`, "-t", image, "-f", "Containerfile", ".",], {
+const result = spawnSync(engine, ["build", "--build-arg", `PORT=${port}`, "--build-arg", `CONFIG_REVISION=${configRevision}`, "--secret", `id=mcp_json,src=${mcpJsonFile}`, "--secret", `id=mcp_credentials,src=${credentialsFile}`, "-t", image, "-f", "Containerfile", ".",], {
     stdio: "inherit",
     cwd: ROOT
 },);
@@ -338,7 +394,7 @@ if (config.build.podman?.generate_quadlet_unit) {
     if (engine !== "podman") {
         console.warn("build.podman is ignored when build.engine is not podman");
     } else {
-        const quadletPath = writeQuadletFile(ROOT, image, name, port);
+        const quadletPath = await writeQuadletFile(ROOT, image, name, port, config.build.podman);
         console.log(`Wrote quadlet unit ${quadletPath}`);
     }
 }
