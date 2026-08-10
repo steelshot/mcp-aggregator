@@ -1,208 +1,228 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mcp-aggregator.local/build.schema.json",
-  "title": "mcp-aggregator build config",
-  "type": "object",
-  "required": [
-    "build",
-    "mcp"
-  ],
-  "additionalProperties": false,
-  "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "build": {
-      "type": "object",
-      "required": [
-        "engine",
-        "name",
-        "tag",
-        "args"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "engine": {
-          "type": "string",
-          "enum": [
-            "podman",
-            "docker"
-          ]
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "tag": {
-          "type": "string",
-          "minLength": 1
-        },
-        "port": {
-          "description": "Port for the Streamable HTTP endpoint, used both inside the container and on the published host binding.",
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
-          "default": 20000
-        },
-        "args": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^[^=]+=.+$"
-          }
-        },
-        "podman": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "generate_quadlet_unit": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    },
-    "mcp": {
-      "type": "object",
-      "required": [
-        "servers"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "servers": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": {
-            "$ref": "#/$defs/server"
-          }
-        },
-        "oauth": {
-          "description": "Server names that require an interactive OAuth login on the build host.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "uniqueItems": true
-        }
-      }
-    }
-  },
-  "$defs": {
-    "server": {
-      "description": "A downstream MCP server. Unknown fields are passed through to mcp.json unchanged.",
-      "type": "object",
-      "additionalProperties": true,
-      "required": [
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "stdio",
-            "http",
-            "streamable-http"
-          ]
-        },
-        "command": {
-          "type": "string",
-          "minLength": 1
-        },
-        "args": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "env": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "url": {
-          "type": "string",
-          "minLength": 1
-        },
-        "headers": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "description": {
-          "type": "string"
-        },
-        "enabled": {
-          "type": "boolean"
-        },
-        "allowedTools": {
-          "description": "Glob patterns (picomatch); when present, only matching tools are exposed.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "disabledTools": {
-          "description": "Glob patterns (picomatch) removing tools; takes precedence over allowedTools.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "compressionLevel": {
-          "type": "string",
-          "enum": [
-            "max",
-            "high",
-            "medium",
-            "low"
-          ]
-        },
-        "oauth": {
-          "type": "object",
-          "additionalProperties": true,
-          "properties": {
-            "clientId": {
-              "type": "string",
-              "minLength": 1
-            },
-            "clientSecret": {
-              "type": "string"
-            },
-            "scope": {
-              "type": "string"
-            },
-            "callbackPort": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 65535
-            }
-          }
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "stdio"
-              }
-            }
-          },
-          "then": {
-            "required": [
-              "command"
-            ]
-          },
-          "else": {
-            "required": [
-              "url"
-            ]
-          }
-        }
-      ]
-    }
-  }
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://mcp-aggregator.local/build.schema.json",
+	"title": "mcp-aggregator build config",
+	"type": "object",
+	"required": [
+		"build",
+		"mcp"
+	],
+	"additionalProperties": false,
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"build": {
+			"type": "object",
+			"required": [
+				"engine",
+				"name",
+				"tag"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"engine": {
+					"type": "string",
+					"enum": [
+						"podman",
+						"docker"
+					]
+				},
+				"name": {
+					"type": "string",
+					"minLength": 1
+				},
+				"tag": {
+					"type": "string",
+					"minLength": 1
+				},
+				"port": {
+					"description": "Port for the Streamable HTTP endpoint, used both inside the container and on the published host binding.",
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 65535,
+					"default": 20000
+				},
+				"podman": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"generate_quadlet_unit": {
+							"type": "boolean",
+							"default": false
+						},
+						"description": {
+							"description": "Unit Description=.",
+							"type": "string",
+							"minLength": 1,
+							"default": "Local MCP aggregate"
+						},
+						"volumes": {
+							"description": "Extra Volume= entries, in Podman's source:destination[:options] form.",
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"uniqueItems": true,
+							"default": []
+						},
+						"environment": {
+							"description": "Extra Environment= entries, as NAME=value pairs.",
+							"type": "array",
+							"items": {
+								"type": "string",
+								"pattern": "^[^=]+=.*$"
+							},
+							"uniqueItems": true,
+							"default": []
+						}
+					}
+				}
+			}
+		},
+		"mcp": {
+			"type": "object",
+			"required": [
+				"servers"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"servers": {
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": {
+						"$ref": "#/$defs/server"
+					}
+				},
+				"oauth": {
+					"description": "Server names that require an interactive OAuth login on the build host.",
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					},
+					"uniqueItems": true,
+					"default": []
+				}
+			}
+		}
+	},
+	"$defs": {
+		"server": {
+			"description": "A downstream MCP server. Unknown fields are passed through to mcp.json unchanged.",
+			"type": "object",
+			"additionalProperties": true,
+			"required": [
+				"type"
+			],
+			"properties": {
+				"type": {
+					"type": "string",
+					"enum": [
+						"stdio",
+						"http",
+						"streamable-http"
+					]
+				},
+				"command": {
+					"type": "string",
+					"minLength": 1
+				},
+				"args": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"env": {
+					"type": "object",
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"url": {
+					"type": "string",
+					"minLength": 1
+				},
+				"headers": {
+					"type": "object",
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"description": {
+					"type": "string"
+				},
+				"enabled": {
+					"type": "boolean"
+				},
+				"allowedTools": {
+					"description": "Glob patterns (picomatch); when present, only matching tools are exposed.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"disabledTools": {
+					"description": "Glob patterns (picomatch) removing tools; takes precedence over allowedTools.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"compressionLevel": {
+					"type": "string",
+					"enum": [
+						"max",
+						"high",
+						"medium",
+						"low"
+					]
+				},
+				"oauth": {
+					"type": "object",
+					"additionalProperties": true,
+					"properties": {
+						"clientId": {
+							"type": "string",
+							"minLength": 1
+						},
+						"clientSecret": {
+							"type": "string"
+						},
+						"scope": {
+							"type": "string"
+						},
+						"callbackPort": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 65535
+						}
+					}
+				}
+			},
+			"allOf": [
+				{
+					"if": {
+						"properties": {
+							"type": {
+								"const": "stdio"
+							}
+						}
+					},
+					"then": {
+						"required": [
+							"command"
+						]
+					},
+					"else": {
+						"required": [
+							"url"
+						]
+					}
+				}
+			]
+		}
+	}
 }

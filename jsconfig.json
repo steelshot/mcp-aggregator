@@ -5,5 +5,5 @@
     "checkJs": true,
     "moduleResolution": "nodenext"
   },
-  "include": ["build.cjs"]
+  "include": ["build.js"]
 }

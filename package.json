@@ -1,18 +1,24 @@
 {
-  "name": "mcp-aggregator",
-  "private": true,
-  "description": "Builds a container image that compresses multiple MCP servers behind a single Streamable HTTP endpoint.",
-  "license": "MIT",
-  "author": "Džiugas Eiva",
-  "repository": "github:steelshot/mcp-aggregator",
-  "engines": {
-    "node": ">=24"
-  },
-  "scripts": {
-    "build": "node build.cjs",
-    "login": "node build.cjs --login"
-  },
-  "devDependencies": {
-    "ajv": "^8.17.1"
-  }
+	"name": "mcp-aggregator",
+	"private": true,
+	"description": "Builds a container image that presents multiple MCP servers as one Streamable HTTP endpoint. Dependencies are what the image installs; devDependencies are the build driver's own tooling.",
+	"license": "MIT",
+	"author": "Džiugas Eiva",
+	"repository": "github:steelshot/mcp-aggregator",
+	"engines": {
+		"node": ">=24"
+	},
+	"type": "module",
+	"scripts": {
+		"build": "node build.js",
+		"login": "node build.js --login"
+	},
+	"dependencies": {
+		"mcp-compress-router": "1.5.6",
+		"supergateway": "3.4.3"
+	},
+	"devDependencies": {
+		"ajv": "8.20.0",
+		"liquidjs": "10.28.0"
+	}
 }

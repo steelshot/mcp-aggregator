@@ -1,0 +1,24 @@
+[Unit]
+Description={{ description }}
+
+[Container]
+ContainerName={{ name }}
+Image={{ image }}
+RunInit=true
+PublishPort=127.0.0.1:{{ port }}:{{ port }}
+Volume=/etc/ssl/certs:/etc/ssl/certs:ro
+Volume={{ name }}-state:{{ state_dir }}
+{%- for volume in volumes %}
+Volume={{ volume }}
+{%- endfor %}
+{%- for variable in environment %}
+Environment={{ variable }}
+{%- endfor %}
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
