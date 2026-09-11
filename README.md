@@ -40,7 +40,7 @@ flowchart LR
 | Field             | Installed by                   | Contents                                                      |
 |-------------------|--------------------------------|---------------------------------------------------------------|
 | `dependencies`    | the image, `npm ci --omit=dev` | supergateway, the router, and every downstream `stdio` server |
-| `devDependencies` | the build host only            | `ajv` and `liquidjs`, used by `build.js`                      |
+| `devDependencies` | the build host only            | `ajv` and `liquidjs`, used by `build.js`; `eslint` and friends, used by `npm run lint` |
 
 > [!TIP]
 > **RECOMMENDED:** Pin dependency versions exactly; take advantage of `.npmrc` which sets `save-exact=true`
