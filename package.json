@@ -14,7 +14,7 @@
 		"login": "node build.js --login"
 	},
 	"dependencies": {
-		"mcp-compress-router": "1.6.0",
+		"mcp-compress-router": "1.6.4",
 		"supergateway": "3.4.3"
 	},
 	"devDependencies": {
