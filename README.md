@@ -37,9 +37,9 @@ flowchart LR
 
 ## Versions
 
-| Field             | Installed by                   | Contents                                                      |
-|-------------------|--------------------------------|---------------------------------------------------------------|
-| `dependencies`    | the image, `npm ci --omit=dev` | supergateway, the router, and every downstream `stdio` server |
+| Field             | Installed by                   | Contents                                                                               |
+|-------------------|--------------------------------|----------------------------------------------------------------------------------------|
+| `dependencies`    | the image, `npm ci --omit=dev` | supergateway, the router, and every downstream `stdio` server                          |
 | `devDependencies` | the build host only            | `ajv` and `liquidjs`, used by `build.js`; `eslint` and friends, used by `npm run lint` |
 
 > [!TIP]
