@@ -36,9 +36,9 @@ ARG PORT=20000
 # other's refreshed OAuth tokens.
 RUN { \
       echo '#!/bin/sh'; \
-      printf 'exec supergateway --stateful --sessionTimeout 86400000'; \
+      printf 'exec supergateway --stateful'; \
       printf ' --stdio mcp-compress-router --outputTransport streamableHttp'; \
-      printf ' --port %s --streamableHttpPath /mcp\n' "${PORT}"; \
+      printf ' --port %s --streamableHttpPath /mcp --healthEndpoint /healthz\n' "${PORT}"; \
     } > /usr/local/bin/entrypoint && \
     chmod 755 /usr/local/bin/entrypoint
 

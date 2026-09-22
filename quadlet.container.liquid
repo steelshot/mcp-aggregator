@@ -14,6 +14,12 @@ Volume={{ volume }}
 {%- for variable in environment %}
 Environment={{ variable }}
 {%- endfor %}
+HealthCmd=wget --spider -q -T 5 http://127.0.0.1:{{ port }}/healthz
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=10s
+HealthOnFailure=kill
 
 [Service]
 Restart=always

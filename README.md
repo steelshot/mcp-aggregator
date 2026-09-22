@@ -169,7 +169,7 @@ systemctl --user start mcp-aggregator
 ```
 
 > [!IMPORTANT]
-> supergateway exposes no health endpoint over Streamable HTTP, so the unit restarts the container when the process exits but cannot detect one that is running but unresponsive.
+> The health check probes supergateway's `/healthz` endpoint, so the unit replaces a container whose gateway is wedged as well as one whose process has exited. It does not probe the downstream servers, so a healthy verdict means the gateway is answering, not that every downstream is reachable.
 
 ## Connecting a client
 
