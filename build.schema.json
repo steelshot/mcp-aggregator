@@ -171,15 +171,6 @@
 						"type": "string"
 					}
 				},
-				"compressionLevel": {
-					"type": "string",
-					"enum": [
-						"max",
-						"high",
-						"medium",
-						"low"
-					]
-				},
 				"oauth": {
 					"type": "object",
 					"additionalProperties": true,
