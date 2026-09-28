@@ -62,7 +62,7 @@ flowchart LR
 | `mcp.oauth`                          | Server names requiring an interactive login on the build host                                 |
 
 A server is `stdio` and requires `command`, or `http` / `streamable-http` and requires `url`. Unknown fields pass through to `mcp.json` untouched, so router features absent from the schema still work.
-Recognized extras include `compressionLevel`, `allowedTools` and `disabledTools` (picomatch globs), and `enabled`.
+Recognized extras include `description`, `allowedTools` and `disabledTools` (picomatch globs), and `enabled`. The router shows `description` in its tool catalogue so the model can tell what a server is and when to reach for it, so keep it to a sentence or two.
 
 > [!IMPORTANT]
 > Do not use `npx` for stdio servers, which contacts the registry on every invocation even for an installed package, but instead define it as a dependency and let the Container build prefetch it for
@@ -91,6 +91,7 @@ Recognized extras include `compressionLevel`, `allowedTools` and `disabledTools`
 			"github": {
 				"type": "http",
 				"url": "https://api.githubcopilot.com/mcp/",
+				"description": "GitHub repositories, issues, pull requests and code search. Use for anything hosted on github.com.",
 				"headers": {
 					"Authorization": "Bearer ${GITHUB_MCP_PAT}"
 				}
@@ -101,6 +102,7 @@ Recognized extras include `compressionLevel`, `allowedTools` and `disabledTools`
 				"args": [
 					"/data"
 				],
+				"description": "Read-only access to the files mounted at /data.",
 				"disabledTools": [
 					"*write*",
 					"*delete*"
@@ -109,6 +111,7 @@ Recognized extras include `compressionLevel`, `allowedTools` and `disabledTools`
 			"internal": {
 				"type": "streamable-http",
 				"url": "${INTERNAL_MCP_URL}",
+				"description": "Internal company API for service data that is not public.",
 				"oauth": {
 					"clientId": "${INTERNAL_CLIENT_ID}",
 					"scope": "read"
