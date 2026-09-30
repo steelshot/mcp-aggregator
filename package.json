@@ -15,8 +15,8 @@
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"mcp-compress-router": "2.0.0",
-		"supergateway": "4.0.0"
+		"mcp-compress-router": "3.0.0",
+		"supergateway": "4.1.0"
 	},
 	"overrides": {
 		"undici": "8.10.2"
