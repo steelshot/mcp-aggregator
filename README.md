@@ -160,6 +160,14 @@ Login runs on the build host, because the authorization-code flow needs a browse
 npm run login
 ```
 
+A pre-registered OAuth client, one with a fixed `clientId`, must allow the loopback redirect URI `http://127.0.0.1/mcp-compress-router/oauth-callback` on any port. Clients created through
+dynamic registration need no setup.
+
+> [!WARNING]
+> supergateway starts a separate router for every client session, and each router keeps its OAuth tokens in memory. When a provider rotates refresh tokens, one session's refresh can invalidate the
+> token another session holds, and the sessions overwrite each other's entries in `credentials.json`. Until the router can be shared, prefer one client session at a time for OAuth servers. Podman
+> seeds `credentials.json` only into an empty `<name>-state` volume, so recovering from a failed refresh means rerunning `npm run login`, rebuilding, and recreating that volume.
+
 ## Deploying
 
 With `generate_quadlet_unit` enabled, a build renders `quadlet.container.liquid` to `mcp-aggregator.container` with [LiquidJS](https://liquidjs.com):

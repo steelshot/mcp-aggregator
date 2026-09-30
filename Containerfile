@@ -32,8 +32,8 @@ ARG PORT=20000
 
 # Exec-form ENTRYPOINT performs no variable substitution, so the port is baked into a generated
 # launcher instead. exec keeps supergateway as PID 1 so signals and init reaping still work.
-# --stateful keeps one router process for every session; per-session routers would overwrite each
-# other's refreshed OAuth tokens.
+# --stateful spawns one router per client session and keeps it for the session's lifetime; stateless mode would spawn a
+# router, and reconnect every downstream, on each request. Routers are not shared across sessions (see OAuth in README.md).
 RUN { \
       echo '#!/bin/sh'; \
       printf 'exec supergateway --stateful'; \
