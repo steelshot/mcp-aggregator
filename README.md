@@ -154,7 +154,8 @@ flowchart TD
 
 ## OAuth
 
-Login runs on the build host, because the authorization-code flow needs a browser. Tokens are cached in `credentials.json` at the repository root; `--login` re-authorizes every server in `mcp.oauth`:
+Login runs on the build host, because the authorization-code flow needs a browser. Tokens are cached in `credentials.json` at the repository root and bound to the server URL they were issued
+for, so changing a server's `url` triggers a fresh login on the next build; `--login` re-authorizes every server in `mcp.oauth`:
 
 ```bash
 npm run login
@@ -163,10 +164,10 @@ npm run login
 A pre-registered OAuth client, one with a fixed `clientId`, must allow the loopback redirect URI `http://127.0.0.1/mcp-compress-router/oauth-callback` on any port. Clients created through
 dynamic registration need no setup.
 
-> [!WARNING]
-> supergateway starts a separate router for every client session, and each router keeps its OAuth tokens in memory. When a provider rotates refresh tokens, one session's refresh can invalidate the
-> token another session holds, and the sessions overwrite each other's entries in `credentials.json`. Until the router can be shared, prefer one client session at a time for OAuth servers. Podman
-> seeds `credentials.json` only into an empty `<name>-state` volume, so recovering from a failed refresh means rerunning `npm run login`, rebuilding, and recreating that volume.
+> [!NOTE]
+> supergateway starts a separate router for every client session. The routers share `credentials.json` in the `<name>-state` volume and serialise writes and token refreshes through lock files
+> beside it, so when a provider rotates refresh tokens, one session's refresh is adopted by the others instead of invalidating them. Podman seeds `credentials.json` only into an empty
+> `<name>-state` volume, so recovering from a revoked or expired refresh token means rerunning `npm run login`, rebuilding, and recreating that volume.
 
 ## Deploying
 

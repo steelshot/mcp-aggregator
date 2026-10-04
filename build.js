@@ -261,16 +261,54 @@ function writeMcpJsonFile(dir, config) {
 }
 
 /**
+ * Canonicalises a URL the same way the router does before comparing credential bindings.
+ *
+ * @param {unknown} url
+ * @returns {string | undefined} the canonical form, or undefined when `url` is not a valid absolute URL
+ */
+function normaliseUrl(url) {
+    if (typeof url !== "string") {
+        return undefined;
+    }
+
+    try {
+        return new URL(url).href;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Reports whether the cached store holds tokens the router will accept for `server`.
+ *
+ * The router binds stored credentials to the server URL they were issued for and ignores an entry
+ * recorded for a different URL, so such an entry counts as missing here too. Entries without a
+ * recorded URL predate the binding and are accepted, as the router adopts them. The binding also
+ * covers the authorization server issuer, which needs network discovery and is left to the router.
+ *
  * @param {string} store
  * @param {string} server
+ * @param {unknown} url the server's URL after placeholder expansion
  * @returns {boolean}
  */
-function hasTokens(store, server) {
+function hasTokens(store, server, url) {
+    let entry;
     try {
-        return Boolean(JSON.parse(store)?.[server]?.tokens?.access_token);
+        entry = JSON.parse(store)?.[server];
     } catch {
         return false;
     }
+
+    if (!entry?.tokens?.access_token) {
+        return false;
+    }
+
+    const current = normaliseUrl(url);
+    if (current === undefined) {
+        return false;
+    }
+
+    return entry.serverUrl === undefined || normaliseUrl(entry.serverUrl) === current;
 }
 
 /**
@@ -293,7 +331,8 @@ function writeCredentialsFile(dir, config, mcpJsonFile, forceLogin) {
     writeFileSync(path, cached, {encoding: "utf8", mode: 0o600});
 
     const servers = config.mcp.oauth;
-    const pending = forceLogin ? servers : servers.filter((server) => !hasTokens(cached, server));
+    const {mcpServers} = JSON.parse(readFileSync(mcpJsonFile, "utf8"));
+    const pending = forceLogin ? servers : servers.filter((server) => !hasTokens(cached, server, mcpServers[server]?.url));
 
     if (pending.length === 0) {
         return path;
