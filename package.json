@@ -15,11 +15,14 @@
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"mcp-compress-router": "3.2.1",
+		"mcp-compress-router": "4.0.0",
 		"supergateway": "4.2.0"
 	},
 	"overrides": {
-		"undici": "8.10.2"
+		"undici": "8.12.3",
+		"@modelcontextprotocol/client": "2.3.1",
+		"@modelcontextprotocol/server": "2.3.1",
+		"@modelcontextprotocol/sdk": "1.32.1"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
