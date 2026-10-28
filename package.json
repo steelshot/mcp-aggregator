@@ -19,9 +19,12 @@
 		"supergateway": "4.2.1"
 	},
 	"overrides": {
+		"qs": "6.17.0",
+		"zod": "4.6.7",
 		"undici": "8.12.3",
 		"@modelcontextprotocol/client": "2.3.1",
 		"@modelcontextprotocol/server": "2.3.1",
+		"@modelcontextprotocol/node": "2.1.2",
 		"@modelcontextprotocol/sdk": "1.32.1"
 	},
 	"devDependencies": {
@@ -29,6 +32,6 @@
 		"ajv": "8.20.0",
 		"eslint": "10.13.0",
 		"globals": "17.13.0",
-		"liquidjs": "10.30.0"
+		"liquidjs": "10.30.1"
 	}
 }
