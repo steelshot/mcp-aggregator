@@ -16,7 +16,7 @@
 	},
 	"dependencies": {
 		"mcp-compress-router": "4.0.0",
-		"supergateway": "4.2.0"
+		"supergateway": "4.2.1"
 	},
 	"overrides": {
 		"undici": "8.12.3",
