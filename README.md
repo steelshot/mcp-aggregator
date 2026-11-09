@@ -1,5 +1,9 @@
 # mcp-aggregator
 
+> [!IMPORTANT]
+> **This project is deprecated and no longer maintained.** It is replaced by
+> [mcp-compendium](https://github.com/steelshot/mcp-compendium), a single Go binary with OCI images and a Helm chart.
+> Its README includes a [migration guide](https://github.com/steelshot/mcp-compendium#migrating-from-mcp-aggregator).
 Builds a container image that presents any number of MCP servers to a local client as a single Streamable HTTP endpoint, collapsed behind the two tools that [
 `mcp-compress-router`](https://www.npmjs.com/package/mcp-compress-router) exposes: `get_tool_schema` and `invoke_tool`.
 
